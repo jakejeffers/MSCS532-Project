@@ -1,18 +1,19 @@
+import random
+import string
+import time
+import sys
 from collections import defaultdict
 
 class InvertedIndex:
     def __init__(self):
-        # Dictionary where each word maps to a list of document IDs
         self.index = defaultdict(list)
 
     def add_document(self, doc_id, text):
-        # Tokenize text into words
         words = text.lower().split()
-        for word in set(words):  # Use set to avoid duplicates within the same document
+        for word in set(words):
             self.index[word].append(doc_id)
 
     def search(self, query):
-        # Returns list of document IDs containing the query word
         return self.index.get(query.lower(), [])
 
 class TrieNode:
@@ -39,44 +40,60 @@ class Trie:
                 return False
             node = node.children[char]
         return True
-class SearchEngine:
-    def __init__(self):
-        self.index = InvertedIndex()
-        self.trie = Trie()
 
-    def add_document(self, doc_id, text):
-        # Add document to the inverted index
-        self.index.add_document(doc_id, text)
-        # Add each word to the trie for prefix searching
-        words = text.lower().split()
-        for word in words:
-            self.trie.insert(word)
+# Function to generate random documents
+def generate_random_documents(num_docs, words_per_doc):
+    documents = {}
+    for i in range(num_docs):
+        # Create a random document with a specified number of words
+        random_words = [''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 10)))
+                        for _ in range(words_per_doc)]
+        documents[i] = ' '.join(random_words)
+    return documents
 
-    def search_by_keyword(self, keyword):
-        # Search the inverted index
-        return self.index.search(keyword)
+# Function to measure efficiency for Inverted Index
+def measure_inverted_index_efficiency(num_docs, words_per_doc):
+    inverted_index = InvertedIndex()
+    
+    # Generate random documents
+    documents = generate_random_documents(num_docs, words_per_doc)
 
-    def search_by_prefix(self, prefix):
-        # Search the trie
-        return self.trie.search_prefix(prefix)
-# Sample usage
-search_engine = SearchEngine()
+    # Measure time to add documents
+    start_time = time.time()
+    for doc_id, text in documents.items():
+        inverted_index.add_document(doc_id, text)
+    end_time = time.time()
 
-# Add sample documents
-documents = {
-    1: "Python programming is fun",
-    2: "Python and data structures",
-    3: "Search engines use data structures",
-}
+    # Measure memory usage
+    inverted_index_size = sys.getsizeof(inverted_index.index)
 
-for doc_id, text in documents.items():
-    search_engine.add_document(doc_id, text)
+    print(f"Inverted Index - Time taken to add {num_docs} documents: {end_time - start_time:.4f} seconds")
+    print(f"Inverted Index - Memory size: {inverted_index_size} bytes")
 
-# Keyword search using the inverted index
-print("Keyword search for 'python':", search_engine.search_by_keyword("python"))  # Expected: [1, 2]
-print("Keyword search for 'data':", search_engine.search_by_keyword("data"))      # Expected: [2, 3]
+# Function to measure efficiency for Trie
+def measure_trie_efficiency(num_docs, words_per_doc):
+    trie = Trie()
+    
+    # Generate random documents
+    documents = generate_random_documents(num_docs, words_per_doc)
 
-# Prefix search using the Trie
-print("Prefix search for 'pro':", search_engine.search_by_prefix("pro"))          # Expected: True
-print("Prefix search for 'str':", search_engine.search_by_prefix("str"))          # Expected: True
-print("Prefix search for 'java':", search_engine.search_by_prefix("java"))        # Expected: False
+    # Measure time to add documents
+    start_time = time.time()
+    for text in documents.values():
+        for word in text.lower().split():
+            trie.insert(word)
+    end_time = time.time()
+
+    # Measure memory usage (approximation)
+    trie_size = sys.getsizeof(trie.root)
+
+    print(f"Trie - Time taken to add {num_docs} documents: {end_time - start_time:.4f} seconds")
+    print(f"Trie - Approximate memory size: {trie_size} bytes")
+
+# Parameters for testing
+num_docs = 1000    # Number of documents to generate
+words_per_doc = 50 # Number of words per document
+
+# Measure efficiency for both data structures
+measure_inverted_index_efficiency(num_docs, words_per_doc)
+measure_trie_efficiency(num_docs, words_per_doc)
