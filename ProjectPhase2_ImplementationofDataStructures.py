@@ -65,3 +65,27 @@ def generate_random_documents(num_docs, words_per_doc):
                         for _ in range(words_per_doc)]
         documents[i] = ' '.join(random_words)
     return documents
+
+# Script to Demonstrate Key Operations
+
+# Initialize data structures
+index = InvertedIndex()
+trie = Trie()
+
+# Generate sample documents
+sample_docs = generate_random_documents(5, 10)
+for doc_id, text in sample_docs.items():
+    index.add_document(doc_id, text)
+    for word in text.split():
+        trie.insert(word)
+
+# Demonstrate Inverted Index Search
+print("Inverted Index Search Results for a sample word:")
+query_word = list(sample_docs.values())[0].split()[0]  # Select a random word from a sample doc
+print(f"Searching for '{query_word}'...")
+print(f"Documents containing '{query_word}': {index.search(query_word)}\n")
+
+# Demonstrate Trie Prefix Search
+print("Trie Prefix Search Results:")
+prefix = query_word[:3]  # Use the first 3 characters as a sample prefix
+print(f"Autocomplete for prefix '{prefix}': {trie.search_prefix(prefix)}")
