@@ -1,0 +1,108 @@
+from collections import defaultdict
+import sys
+import time
+import random
+import string
+
+# Inverted Index Class with Optimizations
+class InvertedIndex:
+    def __init__(self):
+        self.index = defaultdict(set)  # Use set for faster operations
+
+    def add_document(self, doc_id, text):
+        words = text.lower().split()
+        for word in set(words):
+            self.index[word].add(doc_id)
+
+    def search(self, query):
+        return list(self.index.get(query.lower(), set()))
+
+    def delete_document(self, doc_id, text):
+        words = text.lower().split()
+        for word in set(words):
+            if doc_id in self.index[word]:
+                self.index[word].remove(doc_id)
+                if not self.index[word]:  # Remove word if no document has it
+                    del self.index[word]
+
+# Trie Node Class
+class TrieNode:
+    def __init__(self):
+        self.children = defaultdict(TrieNode)
+        self.is_end_of_word = False
+
+# Trie Class with Optimizations
+class Trie:
+    def __init__(self):
+        self.root = TrieNode()
+
+    def insert(self, word):
+        node = self.root
+        for char in word:
+            node = node.children[char]
+        node.is_end_of_word = True
+
+    def search_prefix(self, prefix):
+        node = self.root
+        for char in prefix:
+            if char not in node.children:
+                return []
+            node = node.children[char]
+        return self._collect_words(node, prefix)
+
+    def _collect_words(self, node, prefix):
+        results = []
+        if node.is_end_of_word:
+            results.append(prefix)
+        for char, child in node.children.items():
+            results.extend(self._collect_words(child, prefix + char))
+        return results
+
+# Additional Helper Functions
+def generate_random_documents(num_docs, words_per_doc):
+    documents = {}
+    for i in range(num_docs):
+        random_words = [''.join(random.choices(string.ascii_lowercase, k=random.randint(3, 10)))
+                        for _ in range(words_per_doc)]
+        documents[i] = ' '.join(random_words)
+    return documents
+
+def measure_time_and_memory(func, *args, **kwargs):
+    start_time = time.time()
+    result = func(*args, **kwargs)
+    end_time = time.time()
+    print(f"Time taken: {end_time - start_time:.4f}s")
+    return result
+
+# Script for Phase 3
+# Initialize data structures
+index = InvertedIndex()
+trie = Trie()
+
+# Generate a large dataset
+num_docs = 10000
+words_per_doc = 100
+documents = generate_random_documents(num_docs, words_per_doc)
+
+# Insert documents into data structures
+print("Adding documents to Inverted Index...")
+measure_time_and_memory(lambda: [index.add_document(doc_id, text) for doc_id, text in documents.items()])
+
+print("Adding words to Trie...")
+measure_time_and_memory(lambda: [trie.insert(word) for text in documents.values() for word in text.split()])
+
+# Search for a random word in the Inverted Index
+query_word = list(documents.values())[0].split()[0]
+print(f"\nSearching for '{query_word}' in Inverted Index...")
+search_results = measure_time_and_memory(index.search, query_word)
+print(f"Documents containing '{query_word}': {search_results[:5]}{'...' if len(search_results) > 5 else ''}")
+
+# Perform prefix search in Trie
+prefix = query_word[:3]
+print(f"\nSearching for prefix '{prefix}' in Trie...")
+prefix_results = measure_time_and_memory(trie.search_prefix, prefix)
+print(f"Words with prefix '{prefix}': {prefix_results[:5]}{'...' if len(prefix_results) > 5 else ''}")
+
+# Memory profiling
+print(f"\nMemory usage (Inverted Index): {sys.getsizeof(index.index)} bytes")
+print(f"Memory usage (Trie): {sys.getsizeof(trie.root)} bytes")
